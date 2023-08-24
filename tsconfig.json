@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist",
+    "strict": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.txt"],
+  "exclude": ["node_modules"],
+  "extends": "@tsconfig/node20/tsconfig.json"
+}
