@@ -4,6 +4,7 @@
   "description": "",
   "main": "app.js",
   "scripts": {
+    "dev": "npm run build && f1 create -t vanilla-ts -d ./test/",
     "start": "node /src/app.ts",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -21,6 +22,7 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
+    "dotenv": "^16.3.1",
     "yargs": "^17.7.2"
   }
 }

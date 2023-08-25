@@ -2,7 +2,7 @@ import yargs from "yargs/yargs";
 import fs from "fs";
 import path from "path";
 import { exec } from "child_process";
-import { Argv } from "yargs";
+import copyDirectory from "../util/helpers/copyDirectory";
 
 interface CreateArgs {
   directory: string;
@@ -11,17 +11,9 @@ interface CreateArgs {
 
 const IGNORED_FILES_AND_FOLDERS = [".git", "node_modules"];
 
-const templatesDir = path.join(__dirname, "..", "..", "templates");
+const TEMPLATES_DIR: string = process.env.TEMPLATES_DIR as string;
 
-const projectTemplates = fs
-  .readdirSync(templatesDir)
-  .filter(
-    (file) =>
-      !file.startsWith(".") &&
-      fs.lstatSync(path.join(templatesDir, file)).isDirectory()
-  );
-
-export default function createCommand(args: string[]) {
+export default function create(args: string[]) {
   const argv = yargs(args)
     .options({
       directory: {
@@ -45,19 +37,15 @@ export default function createCommand(args: string[]) {
 
   directory ||= "./";
 
-  if (!projectTemplates.includes(template)) {
-    console.log("Please specify a template");
-    return;
-  }
-
-  const templatePath = path.join(templatesDir, template);
+  const templatePath = path.join(TEMPLATES_DIR, template);
 
   if (!fs.existsSync(templatePath)) {
     console.log("Please specify a valid template");
     return;
   }
 
-  copyDirectory(templatePath, directory);
+  copyDirectory(templatePath, directory, IGNORED_FILES_AND_FOLDERS);
+
   // run `npm install` in the directory
   exec("npm install", { cwd: directory }, (err, stdout, stderr) => {
     if (err) {
@@ -68,23 +56,3 @@ export default function createCommand(args: string[]) {
   });
 }
 
-function copyDirectory(currentPath: string, destinationPath: string) {
-  // check if destination exists
-  if (!fs.existsSync(destinationPath)) {
-    fs.mkdirSync(destinationPath);
-  }
-
-  const files = fs.readdirSync(currentPath);
-
-  files.forEach((file) => {
-    const newCurrentPath = path.join(currentPath, file);
-    const newDestinationPath = path.join(destinationPath, file);
-
-    if (fs.lstatSync(newCurrentPath).isDirectory()) {
-      if (file in IGNORED_FILES_AND_FOLDERS) return;
-      copyDirectory(newCurrentPath, newDestinationPath);
-    } else {
-      fs.copyFileSync(newCurrentPath, newDestinationPath);
-    }
-  });
-}

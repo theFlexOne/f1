@@ -7,13 +7,10 @@ const yargs_1 = __importDefault(require("yargs/yargs"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
 const child_process_1 = require("child_process");
+const copyDirectory_1 = __importDefault(require("../util/helpers/copyDirectory"));
 const IGNORED_FILES_AND_FOLDERS = [".git", "node_modules"];
-const templatesDir = path_1.default.join(__dirname, "..", "..", "templates");
-const projectTemplates = fs_1.default
-    .readdirSync(templatesDir)
-    .filter((file) => !file.startsWith(".") &&
-    fs_1.default.lstatSync(path_1.default.join(templatesDir, file)).isDirectory());
-function createCommand(args) {
+const TEMPLATES_DIR = process.env.TEMPLATES_DIR;
+function create(args) {
     const argv = (0, yargs_1.default)(args)
         .options({
         directory: {
@@ -33,16 +30,12 @@ function createCommand(args) {
     console.log(argv);
     let { directory, template } = argv;
     directory ||= "./";
-    if (!projectTemplates.includes(template)) {
-        console.log("Please specify a template");
-        return;
-    }
-    const templatePath = path_1.default.join(templatesDir, template);
+    const templatePath = path_1.default.join(TEMPLATES_DIR, template);
     if (!fs_1.default.existsSync(templatePath)) {
         console.log("Please specify a valid template");
         return;
     }
-    copyDirectory(templatePath, directory);
+    (0, copyDirectory_1.default)(templatePath, directory, IGNORED_FILES_AND_FOLDERS);
     // run `npm install` in the directory
     (0, child_process_1.exec)("npm install", { cwd: directory }, (err, stdout, stderr) => {
         if (err) {
@@ -52,23 +45,4 @@ function createCommand(args) {
         console.log(stdout);
     });
 }
-exports.default = createCommand;
-function copyDirectory(currentPath, destinationPath) {
-    // check if destination exists
-    if (!fs_1.default.existsSync(destinationPath)) {
-        fs_1.default.mkdirSync(destinationPath);
-    }
-    const files = fs_1.default.readdirSync(currentPath);
-    files.forEach((file) => {
-        const newCurrentPath = path_1.default.join(currentPath, file);
-        const newDestinationPath = path_1.default.join(destinationPath, file);
-        if (fs_1.default.lstatSync(newCurrentPath).isDirectory()) {
-            if (file in IGNORED_FILES_AND_FOLDERS)
-                return;
-            copyDirectory(newCurrentPath, newDestinationPath);
-        }
-        else {
-            fs_1.default.copyFileSync(newCurrentPath, newDestinationPath);
-        }
-    });
-}
+exports.default = create;

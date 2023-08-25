@@ -1,15 +1,34 @@
 #!/usr/bin/env node
 
 import fs from "fs";
+import yargs from "yargs/yargs";
+import { hideBin } from "yargs/helpers";
 import path from "path";
 
-const COMMANDS_DIR = path.join(__dirname, "commands");
+require("./util/config").config();
 
-const [command, ...options]: string[] = process.argv.slice(2);
-const commandPath = path.join(COMMANDS_DIR, `${command}.js`);
+run();
 
-console.log(command, options);
+function run() {
+  const { COMMANDS_DIR }: NodeJS.ProcessEnv = process.env;
 
-if (fs.existsSync(commandPath)) {
-  require(commandPath).default(options);
+  const args: string[] = hideBin(process.argv);
+
+  const command = args.at(0);
+
+  if (!command) {
+    console.log("Welcome to the F1 CLI!");
+    return;
+  }
+
+  const commandPath = path.join(COMMANDS_DIR as string, `${command}.js`);
+
+  if (!fs.existsSync(commandPath)) {
+    console.log("Command not found");
+    return;
+  }
+
+  const commandModule = require(commandPath).default;
+
+  commandModule(args.slice(1));
 }
